@@ -1,6 +1,6 @@
 # Rider Watch Craft
 
-**Rider Watch Craft** 是一个 Minecraft NeoForge 模组，作为 **[假面骑士武器大合集 (Kamen Rider Weapon Craft)](https://github.com/xiaoshi2024/MC-KamenRiderWeaponCraft-Mod)** 的扩展，添加了多种骑士表盘核心，可安装到平成剑上，提供独特的技能、模型和动画效果。
+**Rider Watch Craft** 是一个 Minecraft NeoForge 模组，作为 **[假面骑士武器大合集 (Kamen Rider Weapon Craft)](https://modrinth.com/mod/kamenriderweaponcraft)** 的扩展，添加了多种骑士表盘核心，可安装到平成剑上，提供独特的技能、模型和动画效果。
 
 ---
 
@@ -214,7 +214,7 @@ riderwatchcraft/
 
 ## 🔗 相关链接
 
-- [假面骑士武器大合集 源码](https://modrinth.com/mod/kamenriderweaponcraft)
+- [假面骑士武器大合集 源码](https://github.com/xiaoshi2024/MC-KamenRiderWeaponCraft-Mod)
 - [GeckoLib 文档](https://github.com/bernie-g/geckolib/wiki)
 
 ---
