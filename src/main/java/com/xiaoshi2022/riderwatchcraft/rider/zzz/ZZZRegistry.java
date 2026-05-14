@@ -27,8 +27,8 @@ public class ZZZRegistry {
                 ZZZCoreItem.CORE_ID,
                 "ZZZ Dream Core",
                 "riderwatchcraft",
-                ResourceLocation.fromNamespaceAndPath("riderwatchcraft", "geo/item/zzz_core.geo.json"),
-                () -> ResourceLocation.fromNamespaceAndPath("riderwatchcraft", "controller/zzz_core.json"),
+                ResourceLocation.fromNamespaceAndPath("riderwatchcraft", "geo/item/heiseisword_zzz.geo.json"),
+                () -> ResourceLocation.fromNamespaceAndPath("riderwatchcraft", "animations/item/heiseisword_zzz.animation.json"),
                 new ZZZCoreEffectProvider(),
                 500
         );

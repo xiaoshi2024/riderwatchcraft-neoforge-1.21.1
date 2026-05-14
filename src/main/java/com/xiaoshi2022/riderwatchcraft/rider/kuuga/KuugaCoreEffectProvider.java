@@ -1,9 +1,13 @@
 package com.xiaoshi2022.riderwatchcraft.rider.kuuga;
 
 import com.xiaoshi2022.kamenriderweaponcraft.rider.effect.ExternalRiderEffectProvider;
+import com.xiaoshi2022.kamenriderweaponcraft.rider.heisei.kuuga.KuugaRiderEntity;
+import com.xiaoshi2022.kamenriderweaponcraft.rider.sound.RiderSounds;
+import com.xiaoshi2022.riderwatchcraft.RiderWatchCraft;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
@@ -13,7 +17,7 @@ public class KuugaCoreEffectProvider implements ExternalRiderEffectProvider {
 
     @Override
     public String getExternalRiderId() {
-        return KuugaCoreItem.CORE_ID;
+        return "kuuga_mighty";
     }
 
     @Override
@@ -23,12 +27,12 @@ public class KuugaCoreEffectProvider implements ExternalRiderEffectProvider {
 
     @Override
     public float getAttackDamage() {
-        return 35.0f;
+        return 45.0f;
     }
 
     @Override
     public float getEffectRange() {
-        return 6.0f;
+        return 15.0f;
     }
 
     @Override
@@ -38,20 +42,37 @@ public class KuugaCoreEffectProvider implements ExternalRiderEffectProvider {
 
     @Override
     public String getActivationSoundName() {
-        return "entity.player.attack.strong";
+        return "kamenriderweaponcraft:name_kuuga";
     }
 
     @Override
     public void executeSkill(Level level, LivingEntity shooter, Vec3 direction) {
-        for (int i = 0; i < 3; i++) {
-            level.addParticle(ParticleTypes.GLOW,
-                    shooter.getX() + direction.x() * i,
-                    shooter.getY() + 1.0,
-                    shooter.getZ() + direction.z() * i,
-                    direction.x(),
-                    0.2,
-                    direction.z());
+        // 客户端：播放特效和音效
+        if (level.isClientSide) {
+            if (shooter instanceof Player player) {
+                // 播放空我音效
+                RiderSounds.playSound(level, player, RiderSounds.NAME_KUUGA);
+
+                // 添加技能准备特效 - 金色光环
+                for (int i = 0; i < 36; i++) {
+                    double angle = 2 * Math.PI * i / 36;
+                    double offsetX = Math.cos(angle) * 1.5;
+                    double offsetZ = Math.sin(angle) * 1.5;
+                    level.addParticle(ParticleTypes.GLOW,
+                            shooter.getX() + offsetX,
+                            shooter.getY() + 0.5,
+                            shooter.getZ() + offsetZ,
+                            0, 0.1, 0);
+                }
+            }
+            return;
         }
+
+        // 服务端：调用前置模组已有的空我骑士踢效果
+        KuugaRiderEntity.trySpawnEffect(level, shooter, direction, getAttackDamage());
+
+        // 日志记录
+        RiderWatchCraft.LOGGER.info("Kuuga Mighty skill executed by: {}", shooter.getName().getString());
     }
 
     @Override

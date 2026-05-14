@@ -3,7 +3,6 @@ package com.xiaoshi2022.riderwatchcraft.rider.zzz;
 import com.xiaoshi2022.kamenriderweaponcraft.rider.effect.ExternalRiderEffectProvider;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
@@ -71,13 +70,13 @@ public class ZZZCoreEffectProvider implements ExternalRiderEffectProvider {
     @Nullable
     @Override
     public ResourceLocation getExternalModelLocation() {
-        return ResourceLocation.fromNamespaceAndPath("riderwatchcraft", "geo/item/zzz_core.geo.json");
+        return ResourceLocation.fromNamespaceAndPath("riderwatchcraft", "geo/item/heiseisword_zzz.geo.json");
     }
 
     @Nullable
     @Override
     public Supplier<ResourceLocation> getExternalAnimController() {
-        return () -> ResourceLocation.fromNamespaceAndPath("riderwatchcraft", "controller/zzz_core.json");
+        return () -> ResourceLocation.fromNamespaceAndPath("riderwatchcraft", "animations/item/heiseisword_zzz.animation.json");
     }
 
     @Override

@@ -1,23 +1,25 @@
 package com.xiaoshi2022.riderwatchcraft;
 
-import com.xiaoshi2022.kamenriderweaponcraft.rider.core.CoreInteractionHandler;
+import com.mojang.logging.LogUtils;
+import com.xiaoshi2022.kamenriderweaponcraft.Item.custom.Heiseisword;
+import com.xiaoshi2022.kamenriderweaponcraft.rider.core.CoreSlotManager;
+import com.xiaoshi2022.kamenriderweaponcraft.rider.energy.HeiseiswordEnergyManager;
+import com.xiaoshi2022.riderwatchcraft.network.NetworkHandler;
 import com.xiaoshi2022.riderwatchcraft.rider.kuuga.KuugaCoreItem;
 import com.xiaoshi2022.riderwatchcraft.rider.kuuga.KuugaRegistry;
 import com.xiaoshi2022.riderwatchcraft.rider.zzz.ZZZCoreItem;
 import com.xiaoshi2022.riderwatchcraft.rider.zzz.ZZZRegistry;
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
+import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
-import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
@@ -26,9 +28,6 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import org.slf4j.Logger;
-import com.mojang.logging.LogUtils;
-import org.lwjgl.glfw.GLFW;
-import software.bernie.geckolib.GeckoLib;
 
 @Mod(RiderWatchCraft.MODID)
 public class RiderWatchCraft {
@@ -53,14 +52,13 @@ public class RiderWatchCraft {
     );
 
     public RiderWatchCraft(IEventBus modEventBus, ModContainer modContainer) {
-
         ITEMS.register(modEventBus);
         CREATIVE_MODE_TABS.register(modEventBus);
 
         modEventBus.addListener(this::commonSetup);
-
         modEventBus.register(ZZZRegistry.class);
         modEventBus.register(KuugaRegistry.class);
+        modEventBus.register(NetworkHandler.class);
 
         NeoForge.EVENT_BUS.register(this);
 
@@ -74,65 +72,75 @@ public class RiderWatchCraft {
     @SubscribeEvent
     public void onRightClickItem(PlayerInteractEvent.RightClickItem event) {
         Player player = event.getEntity();
+        ItemStack mainhand = player.getMainHandItem();
 
-        // 1. 首先忽略 Shift+右键（无论是在客户端还是服务端）
-        if (player.isShiftKeyDown()) {
+        if (!Heiseisword.isHeiseisword(mainhand)) {
             return;
         }
 
-        // 2. 只在按下 Alt 键时才处理
-        if (!isAltPressed(player)) {
-            return;
+        boolean hasExternalCore = CoreSlotManager.hasAttachedCore(mainhand);
+
+        // 普通右键：有外部核心时触发技能
+        if (hasExternalCore) {
+            String coreId = CoreSlotManager.getAttachedCoreId(mainhand);
+            CoreSlotManager.CoreSlotInfo coreInfo = CoreSlotManager.getCoreInfo(coreId);
+
+            if (coreInfo != null && coreInfo.effectProvider != null) {
+                var effectProvider = coreInfo.effectProvider;
+                double energyCost = effectProvider.getEnergyCost();
+                double currentEnergy = HeiseiswordEnergyManager.getCurrentEnergy(player);
+
+                if (currentEnergy >= energyCost) {
+                    HeiseiswordEnergyManager.consumeEnergy(player, energyCost);
+                    effectProvider.executeSkill(player.level(), player, player.getLookAngle());
+                    // 移除技能释放提示消息
+                } else if (!player.level().isClientSide) {
+                    // 可选：保留能量不足提示（或者也移除）
+                    // player.sendSystemMessage(...);
+                }
+                event.setCanceled(true);
+                return;
+            }
         }
 
-        // 3. 调用前置模组的处理方法
-        CoreInteractionHandler.handleRightClick(event);
+        // 没有外部核心时，让原有机制正常工作（不取消事件）
     }
 
     @SubscribeEvent
     public void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
         Player player = event.getEntity();
+        ItemStack mainhand = player.getMainHandItem();
 
-        if (player.isShiftKeyDown()) {
+        if (!Heiseisword.isHeiseisword(mainhand)) {
             return;
         }
 
-        if (!isAltPressed(player)) {
-            return;
-        }
+        boolean hasExternalCore = CoreSlotManager.hasAttachedCore(mainhand);
 
-        CoreInteractionHandler.handleRightClickBlock(event);
+        if (hasExternalCore) {
+            String coreId = CoreSlotManager.getAttachedCoreId(mainhand);
+            CoreSlotManager.CoreSlotInfo coreInfo = CoreSlotManager.getCoreInfo(coreId);
+
+            if (coreInfo != null && coreInfo.effectProvider != null) {
+                var effectProvider = coreInfo.effectProvider;
+                double energyCost = effectProvider.getEnergyCost();
+                double currentEnergy = HeiseiswordEnergyManager.getCurrentEnergy(player);
+
+                if (currentEnergy >= energyCost) {
+                    HeiseiswordEnergyManager.consumeEnergy(player, energyCost);
+                    effectProvider.executeSkill(player.level(), player, player.getLookAngle());
+
+                    if (!player.level().isClientSide) {
+                        player.sendSystemMessage(Component.literal("§a技能释放！"));
+                    }
+                }
+                event.setCanceled(true);
+            }
+        }
     }
 
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event) {
         LOGGER.info("Server starting");
-    }
-
-    /**
-     * 检查 Alt 键是否按下
-     * 客户端：直接检查键盘状态
-     * 服务端：从 NBT 或数据包中获取（这里简化处理，服务端信任客户端的过滤）
-     */
-    private boolean isAltPressed(Player player) {
-        // 服务端直接返回 true（因为已经在客户端过滤过了）
-        if (!player.level().isClientSide) {
-            return true;
-        }
-
-        // 客户端检查 Alt 键
-        return isAltPressedClient();
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    private boolean isAltPressedClient() {
-        try {
-            long window = Minecraft.getInstance().getWindow().getWindow();
-            boolean leftAlt = GLFW.glfwGetKey(window, GLFW.GLFW_KEY_LEFT_ALT) == GLFW.GLFW_PRESS;
-            boolean rightAlt = GLFW.glfwGetKey(window, GLFW.GLFW_KEY_RIGHT_ALT) == GLFW.GLFW_PRESS;
-            return leftAlt || rightAlt;
-        } catch (Exception e) {
-            return false;
-        }
     }
 }
