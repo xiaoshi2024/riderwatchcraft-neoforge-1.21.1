@@ -30,6 +30,8 @@ import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import org.slf4j.Logger;
 
+import java.lang.reflect.Method;
+
 @Mod(RiderWatchCraft.MODID)
 public class RiderWatchCraft {
     public static final String MODID = "riderwatchcraft";
@@ -51,6 +53,9 @@ public class RiderWatchCraft {
                         output.accept(KUUGA_MIGHTY_CORE.get());
                     }).build()
     );
+
+    // 存储上一次的蓄力释放标记，用于判断是蓄力释放还是普通右键
+    private static final java.util.Map<Player, Boolean> lastWasSneaking = new java.util.HashMap<>();
 
     public RiderWatchCraft(IEventBus modEventBus, ModContainer modContainer) {
         ITEMS.register(modEventBus);
@@ -82,7 +87,24 @@ public class RiderWatchCraft {
 
         boolean hasExternalCore = CoreSlotManager.hasAttachedCore(mainhand);
 
-        // 普通右键：有外部核心时触发技能
+        // 获取 Heiseisword 实例以便检查状态
+        Heiseisword heiseisword = (Heiseisword) mainhand.getItem();
+
+        // 通过反射获取 isFinishTimeMode 状态（因为不能直接修改前置mod）
+        boolean isFinishTimeMode = getFinishTimeMode(heiseisword, mainhand);
+
+        // 记录当前是否按着 Shift
+        boolean isSneaking = player.isShiftKeyDown();
+        lastWasSneaking.put(player, isSneaking);
+
+        // ========== 情况1: Shift+右键（进入/退出必杀时刻模式）==========
+        // 让前置模组正常处理 Shift+右键的逻辑，我们不干预
+        if (isSneaking) {
+            // 不取消事件，让 Heiseisword 正常处理 Shift+右键
+            return;
+        }
+
+        // ========== 情况2: 普通右键（非Shift）==========
         if (hasExternalCore) {
             String coreId = CoreSlotManager.getAttachedCoreId(mainhand);
             CoreSlotManager.CoreSlotInfo coreInfo = CoreSlotManager.getCoreInfo(coreId);
@@ -94,18 +116,27 @@ public class RiderWatchCraft {
 
                 if (currentEnergy >= energyCost) {
                     HeiseiswordEnergyManager.consumeEnergy(player, energyCost);
-                    effectProvider.executeSkill(player.level(), player, player.getLookAngle());
-                    // 移除技能释放提示消息
-                } else if (!player.level().isClientSide) {
-                    // 可选：保留能量不足提示（或者也移除）
-                    // player.sendSystemMessage(...);
+
+                    if (isFinishTimeMode) {
+                        // 必杀时刻模式：只执行外部表盘特效（骑士特效由前置模组的蓄力释放处理）
+                        // 注意：这里只做特效，不重复扣能量
+                        effectProvider.executeSkill(player.level(), player, player.getLookAngle());
+                        // 让前置模组继续处理骑士技能（会叠加）
+                    } else {
+                        // 普通模式：只执行外部表盘特效，阻止前置模组的骑士技能
+                        effectProvider.executeSkill(player.level(), player, player.getLookAngle());
+                        event.setCanceled(true);  // 取消事件，阻止前置模组释放骑士技能
+                        return;
+                    }
+                } else if (!isFinishTimeMode) {
+                    // 能量不足时阻止技能释放
+                    event.setCanceled(true);
+                    return;
                 }
-                event.setCanceled(true);
-                return;
             }
         }
 
-        // 没有外部核心时，让原有机制正常工作（不取消事件）
+        // 没有外部表盘或必杀时刻模式：让前置模组正常处理
     }
 
     @SubscribeEvent
@@ -119,6 +150,18 @@ public class RiderWatchCraft {
 
         boolean hasExternalCore = CoreSlotManager.hasAttachedCore(mainhand);
 
+        // 获取 Heiseisword 实例
+        Heiseisword heiseisword = (Heiseisword) mainhand.getItem();
+        boolean isFinishTimeMode = getFinishTimeMode(heiseisword, mainhand);
+
+        boolean isSneaking = player.isShiftKeyDown();
+
+        // Shift+右键：不干预
+        if (isSneaking) {
+            return;
+        }
+
+        // 普通右键
         if (hasExternalCore) {
             String coreId = CoreSlotManager.getAttachedCoreId(mainhand);
             CoreSlotManager.CoreSlotInfo coreInfo = CoreSlotManager.getCoreInfo(coreId);
@@ -130,14 +173,37 @@ public class RiderWatchCraft {
 
                 if (currentEnergy >= energyCost) {
                     HeiseiswordEnergyManager.consumeEnergy(player, energyCost);
-                    effectProvider.executeSkill(player.level(), player, player.getLookAngle());
 
-//                    if (!player.level().isClientSide) {
-//                        player.sendSystemMessage(Component.literal("§a技能释放！"));
-//                    }
+                    if (isFinishTimeMode) {
+                        // 必杀时刻模式：执行外部表盘特效（会与骑士技能叠加）
+                        effectProvider.executeSkill(player.level(), player, player.getLookAngle());
+                        // 不取消事件，让前置模组也执行
+                    } else {
+                        // 普通模式：只执行外部表盘特效
+                        effectProvider.executeSkill(player.level(), player, player.getLookAngle());
+                        event.setCanceled(true);
+                        return;
+                    }
+                } else if (!isFinishTimeMode) {
+                    event.setCanceled(true);
+                    return;
                 }
-                event.setCanceled(true);
             }
+        }
+    }
+
+    /**
+     * 通过反射获取 Heiseisword 的 isFinishTimeMode 状态
+     */
+    private boolean getFinishTimeMode(Heiseisword heiseisword, ItemStack stack) {
+        try {
+            Method method = Heiseisword.class.getDeclaredMethod("isFinishTimeMode", ItemStack.class);
+            method.setAccessible(true);
+            return (boolean) method.invoke(heiseisword, stack);
+        } catch (Exception e) {
+            // 反射失败，尝试通过其他方式判断
+            LOGGER.debug("Failed to get isFinishTimeMode via reflection", e);
+            return false;
         }
     }
 

@@ -176,7 +176,7 @@ dependencies {
 
     implementation "maven.modrinth:geckolib:gFmrC8Ru"
     //假面骑士武器前置
-    implementation "maven.modrinth:kamenriderweaponcraft:0.2.3beta"
+    implementation "maven.modrinth:kamenriderweaponcraft:0.2.5beta"
 
     //mca联动
     implementation "maven.modrinth:minecraft-comes-alive-reborn:uZa9ZX7n"
