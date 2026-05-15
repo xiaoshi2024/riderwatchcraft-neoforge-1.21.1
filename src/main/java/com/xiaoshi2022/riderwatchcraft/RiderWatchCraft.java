@@ -5,6 +5,7 @@ import com.xiaoshi2022.kamenriderweaponcraft.Item.custom.Heiseisword;
 import com.xiaoshi2022.kamenriderweaponcraft.rider.core.CoreSlotManager;
 import com.xiaoshi2022.kamenriderweaponcraft.rider.energy.HeiseiswordEnergyManager;
 import com.xiaoshi2022.riderwatchcraft.network.NetworkHandler;
+import com.xiaoshi2022.riderwatchcraft.registry.EntityRegister;
 import com.xiaoshi2022.riderwatchcraft.rider.kuuga.KuugaCoreItem;
 import com.xiaoshi2022.riderwatchcraft.rider.kuuga.KuugaRegistry;
 import com.xiaoshi2022.riderwatchcraft.rider.zzz.ZZZCoreItem;
@@ -54,6 +55,7 @@ public class RiderWatchCraft {
     public RiderWatchCraft(IEventBus modEventBus, ModContainer modContainer) {
         ITEMS.register(modEventBus);
         CREATIVE_MODE_TABS.register(modEventBus);
+        EntityRegister.register(modEventBus);
 
         modEventBus.addListener(this::commonSetup);
         modEventBus.register(ZZZRegistry.class);
@@ -130,9 +132,9 @@ public class RiderWatchCraft {
                     HeiseiswordEnergyManager.consumeEnergy(player, energyCost);
                     effectProvider.executeSkill(player.level(), player, player.getLookAngle());
 
-                    if (!player.level().isClientSide) {
-                        player.sendSystemMessage(Component.literal("§a技能释放！"));
-                    }
+//                    if (!player.level().isClientSide) {
+//                        player.sendSystemMessage(Component.literal("§a技能释放！"));
+//                    }
                 }
                 event.setCanceled(true);
             }
