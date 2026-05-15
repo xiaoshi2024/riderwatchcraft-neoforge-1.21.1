@@ -20,7 +20,7 @@
 		"erase": {
 			"animation_length": 6.0833,
 			"bones": {
-				"Impact": {
+				"capsem": {
 					"rotation": {
 						"0.0": {
 							"vector": [0, 0, 0]
@@ -54,7 +54,7 @@
 		"idle": {
 			"animation_length": 6.0833,
 			"bones": {
-				"Impact": {
+				"capsem": {
 					"rotation": {
 						"0.0": {
 							"vector": [0, 0, 0]
