@@ -15,6 +15,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -125,6 +127,7 @@ public class RiderWatchCraft {
                     } else {
                         // 普通模式：只执行外部表盘特效，阻止前置模组的骑士技能
                         effectProvider.executeSkill(player.level(), player, player.getLookAngle());
+                        mainhand.hurtAndBreak(1, player, LivingEntity.getSlotForHand(InteractionHand.MAIN_HAND));
                         event.setCanceled(true);  // 取消事件，阻止前置模组释放骑士技能
                         return;
                     }
@@ -181,6 +184,7 @@ public class RiderWatchCraft {
                     } else {
                         // 普通模式：只执行外部表盘特效
                         effectProvider.executeSkill(player.level(), player, player.getLookAngle());
+                        mainhand.hurtAndBreak(1, player, LivingEntity.getSlotForHand(InteractionHand.MAIN_HAND));
                         event.setCanceled(true);
                         return;
                     }
