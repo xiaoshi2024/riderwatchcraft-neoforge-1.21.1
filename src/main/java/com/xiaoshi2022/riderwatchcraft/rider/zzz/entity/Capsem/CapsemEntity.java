@@ -14,6 +14,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.LeverBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
@@ -27,8 +28,6 @@ public class CapsemEntity extends ThrowableProjectile implements GeoEntity {
     private static final EntityDataAccessor<Integer> CAPSEM_TYPE = SynchedEntityData.defineId(CapsemEntity.class, EntityDataSerializers.INT);
 
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
-
-    // 只保留 idle 动画，循环播放
     private static final RawAnimation IDLE_ANIMATION = RawAnimation.begin().thenLoop("idle");
 
     private boolean hasExecuted = false;
@@ -57,45 +56,34 @@ public class CapsemEntity extends ThrowableProjectile implements GeoEntity {
     @Override
     public void tick() {
         super.tick();
-        
-        if (!this.level().isClientSide && !hasExecuted && getCapsemType() == CapsemType.PLASMA) {
-            Vec3 delta = this.getDeltaMovement();
-            if (delta.lengthSqr() < 0.01 || this.isInWater() || isOnGround()) {
-                hasExecuted = true;
-                executePlasmaEffect(new Vec3(this.getX(), this.getY(), this.getZ()));
-                this.discard();
-            }
-        }
-    }
 
-    private boolean isOnGround() {
-        return this.level().getBlockState(this.blockPosition().below()).isSolid();
-    }
-
-    @Override
-    protected void onHit(net.minecraft.world.phys.HitResult result) {
-        super.onHit(result);
-
-        if (!this.level().isClientSide && !hasExecuted) {
+        if (!this.level().isClientSide && !hasExecuted && getCapsemType() == CapsemType.PLASMA && this.tickCount > 40) {
             hasExecuted = true;
-            executeCapsemEffect(result.getLocation().x(), result.getLocation().y(), result.getLocation().z());
+            executePlasmaEffect(this.position());
             this.discard();
         }
     }
 
-    private void executeCapsemEffect(double x, double y, double z) {
-        Vec3 position = new Vec3(x, y, z);
+    @Override
+    protected void onHit(HitResult result) {
+        super.onHit(result);
 
-        switch (getCapsemType()) {
-            case ERASE:
-                executeEraseEffect(position);
-                break;
-            case IMPACT:
-                executeImpactEffect(position);
-                break;
-            case PLASMA:
-                executePlasmaEffect(position);
-                break;
+        if (!this.level().isClientSide && !hasExecuted) {
+            hasExecuted = true;
+
+            switch (getCapsemType()) {
+                case ERASE:
+                    executeEraseEffect(result.getLocation());
+                    break;
+                case IMPACT:
+                    executeImpactEffect(result.getLocation());
+                    break;
+                case PLASMA:
+                    executePlasmaEffect(result.getLocation());
+                    break;
+            }
+
+            this.discard();
         }
     }
 
@@ -131,59 +119,46 @@ public class CapsemEntity extends ThrowableProjectile implements GeoEntity {
     private void executePlasmaEffect(Vec3 position) {
         level().playSound(null, position.x, position.y, position.z,
                 net.minecraft.sounds.SoundEvents.LIGHTNING_BOLT_THUNDER,
-                net.minecraft.sounds.SoundSource.HOSTILE, 1.0F, 0.9F + level().random.nextFloat() * 0.2F);
+                net.minecraft.sounds.SoundSource.HOSTILE, 1.5F, 0.8F + level().random.nextFloat() * 0.4F);
 
-        Vec3 forwardDir = getOwner() != null ? getOwner().getLookAngle().normalize() : new Vec3(0, 0, 1);
-        double range = 10.0;
-        double radius = 3.0;
-
-        Vec3 endPos = position.add(forwardDir.scale(range));
-        
-        double minX = Math.min(position.x, endPos.x) - radius;
-        double minY = position.y - 2;
-        double minZ = Math.min(position.z, endPos.z) - radius;
-        double maxX = Math.max(position.x, endPos.x) + radius;
-        double maxY = position.y + 3;
-        double maxZ = Math.max(position.z, endPos.z) + radius;
-
-        net.minecraft.world.phys.AABB aabb = new net.minecraft.world.phys.AABB(minX, minY, minZ, maxX, maxY, maxZ);
+        double radius = 5.0;
 
         java.util.List<net.minecraft.world.entity.LivingEntity> entities = level().getEntitiesOfClass(
                 net.minecraft.world.entity.LivingEntity.class,
-                aabb,
-                entity -> entity != getOwner() && entity.isAlive()
+                new net.minecraft.world.phys.AABB(
+                        position.x - radius, position.y - radius, position.z - radius,
+                        position.x + radius, position.y + radius, position.z + radius
+                ),
+                entity -> entity != getOwner() && entity.isAlive() && entity.distanceToSqr(position) <= radius * radius
         );
 
         for (net.minecraft.world.entity.LivingEntity entity : entities) {
-            Vec3 toEntity = entity.position().subtract(position);
-            double dot = toEntity.dot(forwardDir);
-            
-            if (dot > 0 && dot < range) {
-                Vec3 pushDir = toEntity.normalize().add(forwardDir.scale(0.5)).normalize();
-                double pushStrength = 3.0 + (1 - dot / range) * 2.0;
-                
-                entity.setDeltaMovement(
-                        entity.getDeltaMovement().x + pushDir.x * pushStrength,
-                        0.5,
-                        entity.getDeltaMovement().z + pushDir.z * pushStrength
-                );
-                entity.hurt(level().damageSources().lightningBolt(), 8.0f);
-                entity.hurtMarked = true;
-            }
+            double dx = entity.getX() - position.x;
+            double dy = entity.getY() - position.y;
+            double dz = entity.getZ() - position.z;
+            double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+            float damage = 12.0f * (float)(1 - distance / radius);
+            entity.hurt(level().damageSources().lightningBolt(), Math.max(4.0f, damage));
+
+            Vec3 pushDir = new Vec3(dx, dy, dz).normalize();
+            entity.setDeltaMovement(pushDir.x * 1.5, 0.8, pushDir.z * 1.5);
+            entity.hurtMarked = true;
         }
 
         if (level() instanceof ServerLevel serverLevel) {
-            for (int i = 0; i < 20; i++) {
+            for (int i = 0; i < 150; i++) {
+                double offsetX = (level().random.nextDouble() - 0.5) * radius * 2;
+                double offsetY = (level().random.nextDouble() - 0.5) * radius;
+                double offsetZ = (level().random.nextDouble() - 0.5) * radius * 2;
                 serverLevel.sendParticles(
                         net.minecraft.core.particles.ParticleTypes.ELECTRIC_SPARK,
-                        position.x + (level().random.nextDouble() - 0.5) * 2,
-                        position.y + level().random.nextDouble() * 2,
-                        position.z + (level().random.nextDouble() - 0.5) * 2,
+                        position.x + offsetX, position.y + offsetY, position.z + offsetZ,
                         1,
-                        (level().random.nextDouble() - 0.5) * 0.5,
-                        level().random.nextDouble() * 0.5,
-                        (level().random.nextDouble() - 0.5) * 0.5,
-                        0.5
+                        (level().random.nextDouble() - 0.5) * 0.3,
+                        level().random.nextDouble() * 0.3,
+                        (level().random.nextDouble() - 0.5) * 0.3,
+                        0.2
                 );
             }
         }
@@ -245,7 +220,6 @@ public class CapsemEntity extends ThrowableProjectile implements GeoEntity {
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        // 只有一个动画控制器，循环播放 idle
         controllers.add(new AnimationController<>(this, "idle_controller", 0, event -> {
             event.getController().setAnimation(IDLE_ANIMATION);
             return PlayState.CONTINUE;
