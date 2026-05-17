@@ -1,6 +1,8 @@
 package com.xiaoshi2022.riderwatchcraft.rider.kuuga;
 
+import com.xiaoshi2022.riderwatchcraft.registry.riderwatchsSounds;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
@@ -15,6 +17,9 @@ import software.bernie.geckolib.animation.*;
 import software.bernie.geckolib.renderer.GeoItemRenderer;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 import java.util.function.Consumer;
 
 public class KuugaCoreItem extends Item implements GeoItem {
@@ -23,6 +28,8 @@ public class KuugaCoreItem extends Item implements GeoItem {
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
     private static final RawAnimation OPEN_ANIM = RawAnimation.begin().thenPlay("open");
+    private static final Map<UUID, Long> SOUND_COOLDOWN_MAP = new HashMap<>();
+    private static final long COOLDOWN_TICKS = 200L;
 
     public KuugaCoreItem() {
         super(new Properties()
@@ -68,10 +75,17 @@ public class KuugaCoreItem extends Item implements GeoItem {
 
         if (!level.isClientSide && level instanceof ServerLevel serverLevel) {
             long id = GeoItem.getOrAssignId(stack, serverLevel);
-            // 触发动画
             triggerAnim(player, id, "press_controller", "open");
 
-            // 如果有额外的效果，在这里执行
+            long currentTick = level.getGameTime();
+            UUID playerId = player.getUUID();
+            Long lastPlayTick = SOUND_COOLDOWN_MAP.get(playerId);
+
+            if (lastPlayTick == null || currentTick - lastPlayTick >= COOLDOWN_TICKS) {
+                SOUND_COOLDOWN_MAP.put(playerId, currentTick);
+                serverLevel.playSound(null, player.getX(), player.getY(), player.getZ(),
+                        riderwatchsSounds.KUUGA_RIDER_WATCH.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+            }
         }
 
         return super.use(level, player, hand);

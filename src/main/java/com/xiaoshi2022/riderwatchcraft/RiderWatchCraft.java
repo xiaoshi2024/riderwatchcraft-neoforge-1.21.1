@@ -6,6 +6,7 @@ import com.xiaoshi2022.kamenriderweaponcraft.rider.core.CoreSlotManager;
 import com.xiaoshi2022.kamenriderweaponcraft.rider.energy.HeiseiswordEnergyManager;
 import com.xiaoshi2022.riderwatchcraft.network.NetworkHandler;
 import com.xiaoshi2022.riderwatchcraft.registry.EntityRegister;
+import com.xiaoshi2022.riderwatchcraft.registry.riderwatchsSounds;
 import com.xiaoshi2022.riderwatchcraft.rider.kuuga.KuugaCoreItem;
 import com.xiaoshi2022.riderwatchcraft.rider.kuuga.KuugaRegistry;
 import com.xiaoshi2022.riderwatchcraft.rider.zzz.ZZZCoreItem;
@@ -63,6 +64,7 @@ public class RiderWatchCraft {
         ITEMS.register(modEventBus);
         CREATIVE_MODE_TABS.register(modEventBus);
         EntityRegister.register(modEventBus);
+        riderwatchsSounds.register(modEventBus);
 
         modEventBus.addListener(this::commonSetup);
         modEventBus.register(ZZZRegistry.class);

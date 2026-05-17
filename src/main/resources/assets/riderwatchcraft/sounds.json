@@ -1,0 +1,20 @@
+{
+  "kuuga_rider_watch": {
+    "subtitle": "subtitles.kuugarw",
+    "sounds": [
+      {
+        "name": "riderwatchcraft:kuuga_rider_watch",
+        "stream": false
+      }
+    ]
+  },
+  "zzz_rider_watch": {
+    "subtitle": "subtitles.zzzrw",
+    "sounds": [
+      {
+        "name": "riderwatchcraft:zzz_rider_watch",
+        "stream": false
+      }
+    ]
+  }
+}
