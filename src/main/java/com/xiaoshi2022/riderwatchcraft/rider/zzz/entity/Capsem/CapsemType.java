@@ -5,7 +5,8 @@ import net.minecraft.resources.ResourceLocation;
 
 public enum CapsemType {
     ERASE("erase", 0x8B0000),
-    IMPACT("impact", 0xFF8C00);
+    IMPACT("impact", 0xFF8C00),
+    PLASMA("plasma", 0x00FFFF);
 
     private final String name;
     private final int color;

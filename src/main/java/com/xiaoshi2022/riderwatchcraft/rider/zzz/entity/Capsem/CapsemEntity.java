@@ -6,6 +6,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.ThrowableProjectile;
@@ -56,7 +57,19 @@ public class CapsemEntity extends ThrowableProjectile implements GeoEntity {
     @Override
     public void tick() {
         super.tick();
-        // 无需额外动画处理，idle 会自动循环播放
+        
+        if (!this.level().isClientSide && !hasExecuted && getCapsemType() == CapsemType.PLASMA) {
+            Vec3 delta = this.getDeltaMovement();
+            if (delta.lengthSqr() < 0.01 || this.isInWater() || isOnGround()) {
+                hasExecuted = true;
+                executePlasmaEffect(new Vec3(this.getX(), this.getY(), this.getZ()));
+                this.discard();
+            }
+        }
+    }
+
+    private boolean isOnGround() {
+        return this.level().getBlockState(this.blockPosition().below()).isSolid();
     }
 
     @Override
@@ -79,6 +92,9 @@ public class CapsemEntity extends ThrowableProjectile implements GeoEntity {
                 break;
             case IMPACT:
                 executeImpactEffect(position);
+                break;
+            case PLASMA:
+                executePlasmaEffect(position);
                 break;
         }
     }
@@ -110,6 +126,67 @@ public class CapsemEntity extends ThrowableProjectile implements GeoEntity {
 
     private void executeImpactEffect(Vec3 position) {
         ImpactEarthquakeEntity.create(level(), position, 8.0, 40);
+    }
+
+    private void executePlasmaEffect(Vec3 position) {
+        level().playSound(null, position.x, position.y, position.z,
+                net.minecraft.sounds.SoundEvents.LIGHTNING_BOLT_THUNDER,
+                net.minecraft.sounds.SoundSource.HOSTILE, 1.0F, 0.9F + level().random.nextFloat() * 0.2F);
+
+        Vec3 forwardDir = getOwner() != null ? getOwner().getLookAngle().normalize() : new Vec3(0, 0, 1);
+        double range = 10.0;
+        double radius = 3.0;
+
+        Vec3 endPos = position.add(forwardDir.scale(range));
+        
+        double minX = Math.min(position.x, endPos.x) - radius;
+        double minY = position.y - 2;
+        double minZ = Math.min(position.z, endPos.z) - radius;
+        double maxX = Math.max(position.x, endPos.x) + radius;
+        double maxY = position.y + 3;
+        double maxZ = Math.max(position.z, endPos.z) + radius;
+
+        net.minecraft.world.phys.AABB aabb = new net.minecraft.world.phys.AABB(minX, minY, minZ, maxX, maxY, maxZ);
+
+        java.util.List<net.minecraft.world.entity.LivingEntity> entities = level().getEntitiesOfClass(
+                net.minecraft.world.entity.LivingEntity.class,
+                aabb,
+                entity -> entity != getOwner() && entity.isAlive()
+        );
+
+        for (net.minecraft.world.entity.LivingEntity entity : entities) {
+            Vec3 toEntity = entity.position().subtract(position);
+            double dot = toEntity.dot(forwardDir);
+            
+            if (dot > 0 && dot < range) {
+                Vec3 pushDir = toEntity.normalize().add(forwardDir.scale(0.5)).normalize();
+                double pushStrength = 3.0 + (1 - dot / range) * 2.0;
+                
+                entity.setDeltaMovement(
+                        entity.getDeltaMovement().x + pushDir.x * pushStrength,
+                        0.5,
+                        entity.getDeltaMovement().z + pushDir.z * pushStrength
+                );
+                entity.hurt(level().damageSources().lightningBolt(), 8.0f);
+                entity.hurtMarked = true;
+            }
+        }
+
+        if (level() instanceof ServerLevel serverLevel) {
+            for (int i = 0; i < 20; i++) {
+                serverLevel.sendParticles(
+                        net.minecraft.core.particles.ParticleTypes.ELECTRIC_SPARK,
+                        position.x + (level().random.nextDouble() - 0.5) * 2,
+                        position.y + level().random.nextDouble() * 2,
+                        position.z + (level().random.nextDouble() - 0.5) * 2,
+                        1,
+                        (level().random.nextDouble() - 0.5) * 0.5,
+                        level().random.nextDouble() * 0.5,
+                        (level().random.nextDouble() - 0.5) * 0.5,
+                        0.5
+                );
+            }
+        }
     }
 
     private boolean isRedstoneStructure(Block block) {
