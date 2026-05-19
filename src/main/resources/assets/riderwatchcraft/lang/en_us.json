@@ -5,11 +5,13 @@
 
   "subtitles.kuugarw": "Kuuga !",
   "subtitles.zzzrw": "ZZZ !",
+  "subtitles.decaderider": "Decade !",
 
 
 
   "itemGroup.riderwatchcraft": "RiderWatchCraft",
   "itemGroup.riderwatchcraft.riders": "Riders",
   "item.riderwatchcraft.zzz_dream_core": "ZZZ Rider Watch",
-  "item.riderwatchcraft.kuuga_mighty_core": "Kuuga Rider Watch"
+  "item.riderwatchcraft.kuuga_mighty_core": "Kuuga Rider Watch",
+  "item.riderwatchcraft.decade_form_core": "DCD Rider Watch"
 }

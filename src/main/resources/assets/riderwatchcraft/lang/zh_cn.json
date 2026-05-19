@@ -3,9 +3,11 @@
   "key.riderwatchcraft.core_operation": "安装/拆卸外部核心",
   "subtitles.kuugarw": "空我!",
   "subtitles.zzzrw": "ZZZ!",
+  "subtitles.decaderider": "帝骑!",
 
   "itemGroup.riderwatchcraft": "骑士表盘工艺",
   "itemGroup.riderwatchcraft.riders": "骑士",
   "item.riderwatchcraft.zzz_dream_core": "ZZZ骑士表盘",
-  "item.riderwatchcraft.kuuga_mighty_core": "空我骑士表盘"
+  "item.riderwatchcraft.kuuga_mighty_core": "空我骑士表盘",
+  "item.riderwatchcraft.decade_form_core": "帝骑骑士表盘"
 }

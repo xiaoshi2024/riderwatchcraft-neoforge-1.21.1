@@ -18,6 +18,9 @@ public class riderwatchsSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> ZZZ_RIDER_WATCH = SOUND_EVENTS.register("zzz_rider_watch",
             () -> SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(RiderWatchCraft.MODID, "zzz_rider_watch")));
 
+    public static final DeferredHolder<SoundEvent, SoundEvent> DECADE_RIDER_WATCH = SOUND_EVENTS.register("decade_rider_watch",
+            () -> SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(RiderWatchCraft.MODID, "decade_rider_watch")));
+
     public static void register(IEventBus eventBus) {
         SOUND_EVENTS.register(eventBus);
     }

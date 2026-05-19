@@ -7,6 +7,7 @@ import com.xiaoshi2022.kamenriderweaponcraft.rider.energy.HeiseiswordEnergyManag
 import com.xiaoshi2022.riderwatchcraft.network.NetworkHandler;
 import com.xiaoshi2022.riderwatchcraft.registry.EntityRegister;
 import com.xiaoshi2022.riderwatchcraft.registry.riderwatchsSounds;
+import com.xiaoshi2022.riderwatchcraft.rider.decade.DecadeCoreItem;
 import com.xiaoshi2022.riderwatchcraft.rider.kuuga.KuugaCoreItem;
 import com.xiaoshi2022.riderwatchcraft.rider.kuuga.KuugaRegistry;
 import com.xiaoshi2022.riderwatchcraft.rider.zzz.ZZZCoreItem;
@@ -45,6 +46,8 @@ public class RiderWatchCraft {
 
     public static final DeferredItem<ZZZCoreItem> ZZZ_DREAM_CORE = ITEMS.register("zzz_dream_core", ZZZCoreItem::new);
     public static final DeferredItem<KuugaCoreItem> KUUGA_MIGHTY_CORE = ITEMS.register("kuuga_mighty_core", KuugaCoreItem::new);
+    public static final DeferredItem<DecadeCoreItem> DECADE_FORM_CORE = ITEMS.register("decade_form_core", DecadeCoreItem::new);
+
 
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> RIDERS_TAB = CREATIVE_MODE_TABS.register("riders_tab", () ->
             CreativeModeTab.builder()
@@ -54,6 +57,7 @@ public class RiderWatchCraft {
                     .displayItems((parameters, output) -> {
                         output.accept(ZZZ_DREAM_CORE.get());
                         output.accept(KUUGA_MIGHTY_CORE.get());
+                        output.accept(DECADE_FORM_CORE.get());
                     }).build()
     );
 

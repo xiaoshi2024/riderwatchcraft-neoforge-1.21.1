@@ -16,5 +16,14 @@
         "stream": false
       }
     ]
+  },
+  "decade_rider_watch": {
+    "subtitle": "subtitles.decaderider",
+    "sounds": [
+      {
+        "name": "riderwatchcraft:decade_rider_watch",
+        "stream": false
+      }
+    ]
   }
 }
