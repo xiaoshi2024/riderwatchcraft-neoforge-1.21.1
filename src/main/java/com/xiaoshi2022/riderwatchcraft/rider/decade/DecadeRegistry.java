@@ -2,6 +2,7 @@ package com.xiaoshi2022.riderwatchcraft.rider.decade;
 
 import com.xiaoshi2022.kamenriderweaponcraft.rider.core.CoreInteractionHandler;
 import com.xiaoshi2022.kamenriderweaponcraft.rider.core.CoreSlotManager;
+import com.xiaoshi2022.riderwatchcraft.RiderWatchCraft;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
@@ -15,6 +16,8 @@ public class DecadeRegistry {
     @SubscribeEvent
     public static void onInit(FMLLoadCompleteEvent event) {
         CoreInteractionHandler.registerCoreItemFactory(coreId -> {
+            RiderWatchCraft.LOGGER.info("Decade factory called with coreId: {}", coreId);  // 加这行
+
             if (DecadeCoreItem.CORE_ID.equals(coreId)) {
                 return new ItemStack(BuiltInRegistries.ITEM.get(
                         ResourceLocation.fromNamespaceAndPath("riderwatchcraft", "decade_form_core")

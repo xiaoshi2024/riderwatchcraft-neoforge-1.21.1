@@ -71,8 +71,6 @@ public class RiderWatchCraft {
         riderwatchsSounds.register(modEventBus);
 
         modEventBus.addListener(this::commonSetup);
-        modEventBus.register(ZZZRegistry.class);
-        modEventBus.register(KuugaRegistry.class);
         modEventBus.register(NetworkHandler.class);
 
         NeoForge.EVENT_BUS.register(this);

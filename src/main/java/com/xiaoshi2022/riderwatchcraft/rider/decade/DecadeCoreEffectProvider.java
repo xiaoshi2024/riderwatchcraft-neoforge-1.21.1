@@ -1,6 +1,7 @@
 package com.xiaoshi2022.riderwatchcraft.rider.decade;
 
 import com.xiaoshi2022.kamenriderweaponcraft.rider.effect.ExternalRiderEffectProvider;
+import com.xiaoshi2022.kamenriderweaponcraft.rider.heisei.decade.DecadeRiderEntity;
 import com.xiaoshi2022.riderwatchcraft.RiderWatchCraft;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.resources.ResourceLocation;
@@ -15,7 +16,7 @@ public class DecadeCoreEffectProvider implements ExternalRiderEffectProvider {
 
     @Override
     public String getExternalRiderId() {
-        return "decade_form_core";
+        return "decade_form";
     }
 
     @Override
@@ -47,7 +48,6 @@ public class DecadeCoreEffectProvider implements ExternalRiderEffectProvider {
     public void executeSkill(Level level, LivingEntity shooter, Vec3 direction) {
         if (level.isClientSide) {
             if (shooter instanceof Player player) {
-                // 添加技能特效 - 紫色光环
                 for (int i = 0; i < 36; i++) {
                     double angle = 2 * Math.PI * i / 36;
                     double offsetX = Math.cos(angle) * 1.5;
@@ -61,6 +61,9 @@ public class DecadeCoreEffectProvider implements ExternalRiderEffectProvider {
             }
             return;
         }
+
+        // 服务端：调用前置模组已有的Decade骑士踢效果
+        DecadeRiderEntity.trySpawnEffect(level, shooter, direction, getAttackDamage());
 
         RiderWatchCraft.LOGGER.info("Decade skill executed by: {}", shooter.getName().getString());
     }

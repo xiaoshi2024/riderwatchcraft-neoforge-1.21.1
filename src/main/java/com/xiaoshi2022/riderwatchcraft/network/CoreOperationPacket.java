@@ -92,6 +92,9 @@ public record CoreOperationPacket(String operation, String coreId) implements Cu
         if ("zzz_dream".equals(coreId)) {
             return new ItemStack(RiderWatchCraft.ZZZ_DREAM_CORE.get());
         }
+        if ("decade_form".equals(coreId)) {  // ← 添加这个
+            return new ItemStack(RiderWatchCraft.DECADE_FORM_CORE.get());
+        }
         return ItemStack.EMPTY;
     }
 }
